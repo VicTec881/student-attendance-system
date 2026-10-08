@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Students | Student Attendance Management System</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231E3A8A'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="main">
+      <main class="content" id="content" tabindex="-1">
+
+        <div class="page-header">
+          <div>
+            <h1>Students</h1>
+            <p class="page-subtitle" id="page-subtitle">Loading students...</p>
+          </div>
+          <button type="button" id="add-btn" class="btn btn-primary">
+            <span data-icon="plus" data-size="18"></span>Add Student
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="toolbar">
+            <div class="grow input-icon">
+              <span data-icon="search"></span>
+              <input id="search" type="search" class="form-control" autocomplete="off"
+                     placeholder="Search by name, Student ID or Registration No." aria-label="Search students">
+            </div>
+            <select id="filter-class" class="form-control" aria-label="Filter by class"><option value="">All classes</option></select>
+            <select id="filter-course" class="form-control" aria-label="Filter by course or program"><option value="">All courses</option></select>
+            <select id="filter-year" class="form-control" aria-label="Filter by year of study"><option value="">All years</option></select>
+            <select id="filter-status" class="form-control" aria-label="Filter by status">
+              <option value="">All statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            <button type="button" id="clear-filters" class="btn btn-secondary btn-sm hidden">Clear filters</button>
+          </div>
+
+          <div id="table-area"></div>
+          <div id="pagination" class="pagination hidden"></div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/icons.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/modal.js"></script>
+  <script src="/js/lookups.js"></script>
+  <script src="/js/students.js"></script>
+</body>
+</html>

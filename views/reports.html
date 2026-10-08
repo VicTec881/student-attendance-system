@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reports | Student Attendance Management System</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231E3A8A'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="main">
+      <main class="content" id="content" tabindex="-1">
+
+        <div class="page-header">
+          <div>
+            <h1>Reports</h1>
+            <p class="page-subtitle">Generate attendance reports and export them to Excel or PDF.</p>
+          </div>
+        </div>
+
+        <section class="card section" aria-labelledby="builder-title">
+          <div class="card-header"><h2 id="builder-title">Generate a report</h2></div>
+          <div class="card-body">
+            <form id="report-form" novalidate>
+              <div id="form-alert" class="alert hidden" role="alert"></div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="r-type">Report type <span class="required" aria-hidden="true">*</span></label>
+                  <select id="r-type" class="form-control">
+                    <option value="daily">Daily Attendance Report</option>
+                    <option value="weekly">Weekly Attendance Report</option>
+                    <option value="monthly">Monthly Attendance Report</option>
+                    <option value="class">Class Attendance Report</option>
+                    <option value="student">Student Attendance Report</option>
+                  </select>
+                  <p id="type-hint" class="field-hint"></p>
+                </div>
+
+                <div class="form-group" data-field="date">
+                  <label for="r-date" id="date-label">Date</label>
+                  <input id="r-date" type="date" class="form-control">
+                  <p id="date-hint" class="field-hint"></p>
+                  <p id="r-date-error" class="field-error"></p>
+                </div>
+
+                <div class="form-group" data-field="month">
+                  <label for="r-month">Month <span class="required" aria-hidden="true">*</span></label>
+                  <div class="split">
+                    <select id="r-month" class="form-control"></select>
+                    <select id="r-year" class="form-control" aria-label="Year"></select>
+                  </div>
+                  <p id="r-month-error" class="field-error"></p>
+                </div>
+
+                <div class="form-group" data-field="class">
+                  <label for="r-class" id="class-label">Class</label>
+                  <select id="r-class" class="form-control"></select>
+                  <p id="r-class-error" class="field-error"></p>
+                </div>
+
+                <div class="form-group" data-field="course">
+                  <label for="r-course">Course/Program <span class="optional">(optional)</span></label>
+                  <select id="r-course" class="form-control"></select>
+                </div>
+
+                <div class="form-group" data-field="student">
+                  <label for="r-student">Student <span class="required" aria-hidden="true">*</span></label>
+                  <select id="r-student" class="form-control"></select>
+                  <p id="r-student-error" class="field-error"></p>
+                </div>
+
+                <div class="form-group" data-field="range">
+                  <label for="r-from">From <span class="optional">(optional)</span></label>
+                  <input id="r-from" type="date" class="form-control">
+                </div>
+                <div class="form-group" data-field="range">
+                  <label for="r-to">To <span class="optional">(optional)</span></label>
+                  <input id="r-to" type="date" class="form-control">
+                  <p id="r-to-error" class="field-error"></p>
+                </div>
+
+                <div class="form-group" data-field="status">
+                  <label for="r-status">Students to include</label>
+                  <select id="r-status" class="form-control">
+                    <option value="Active">Active students</option>
+                    <option value="Inactive">Inactive students</option>
+                    <option value="All">All students</option>
+                  </select>
+                </div>
+
+                <div class="form-group" data-field="empty">
+                  <span class="label">Options</span>
+                  <label class="check-field"><input type="checkbox" id="r-empty"> Include students with no records</label>
+                </div>
+              </div>
+
+              <div class="report-actions">
+                <button type="submit" id="generate-btn" class="btn btn-primary"><span data-icon="file-text" data-size="18"></span>Generate Report</button>
+                <button type="button" id="excel-btn" class="btn btn-secondary"><span data-icon="download" data-size="18"></span>Export to Excel</button>
+                <button type="button" id="pdf-btn" class="btn btn-secondary"><span data-icon="download" data-size="18"></span>Export to PDF</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <div id="result-area" aria-live="polite"></div>
+
+        <section class="card section" aria-labelledby="history-title">
+          <div class="card-header">
+            <div>
+              <h2 id="history-title">Recent reports</h2>
+              <p class="page-subtitle" id="history-subtitle"></p>
+            </div>
+          </div>
+          <div id="history-area"></div>
+          <div id="history-pagination" class="pagination hidden"></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/icons.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/lookups.js"></script>
+  <script src="/js/download.js"></script>
+  <script src="/js/reports.js"></script>
+</body>
+</html>
