@@ -6,10 +6,17 @@
   const user = window.SAMS.layout.init({ roles: ['admin', 'teacher'], title: 'Students' });
   if (!user) return;
 
-  const isAdmin = user.role === 'admin'; // only admins can edit or delete
+  const isAdmin = user.role === 'admin'; // only admins can edit, delete or create logins
   const EMAIL_RE = /^\S+@\S+\.\S+$/;
   const PAGE_SIZES = [10, 25, 50, 100];
-  const DASH = '\u2014';
+  const DASH = '—';
+
+  const PW_RULES = [
+    { ok: (p) => p.length >= 8, message: 'Password must contain at least 8 characters.' },
+    { ok: (p) => /[A-Z]/.test(p), message: 'Password must contain an uppercase letter.' },
+    { ok: (p) => /[a-z]/.test(p), message: 'Password must contain a lowercase letter.' },
+    { ok: (p) => /\d/.test(p), message: 'Password must contain a number.' },
+  ];
 
   const COLUMNS = [
     { key: 'studentId', label: 'Student ID' },
@@ -73,6 +80,45 @@
     const el = document.querySelector(focusAfter);
     focusAfter = null;
     if (el && !el.disabled) el.focus();
+  }
+
+  /* ---------- Temporary password helpers ---------- */
+  function randomInt(max) {
+    const buffer = new Uint32Array(1);
+    window.crypto.getRandomValues(buffer);
+    return buffer[0] % max;
+  }
+
+  // 12 characters with an uppercase letter, a lowercase letter and a number
+  function generatePassword() {
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const lower = 'abcdefghijkmnopqrstuvwxyz';
+    const digits = '23456789';
+    const pick = (set) => set.charAt(randomInt(set.length));
+    const chars = [pick(upper), pick(lower), pick(digits)];
+    while (chars.length < 12) chars.push(pick(upper + lower + digits));
+    for (let i = chars.length - 1; i > 0; i -= 1) {
+      const j = randomInt(i + 1);
+      const swap = chars[i]; chars[i] = chars[j]; chars[j] = swap;
+    }
+    return chars.join('');
+  }
+
+  function accountBlock() {
+    return (
+      '<div class="form-block"><h3 class="form-section">Login account</h3>' +
+      '<label class="check-field"><input type="checkbox" id="f-createLogin" checked> Create a login account for this student</label>' +
+      '<div id="login-fields" style="margin-top:12px">' +
+      '<p class="field-hint" style="margin:0 0 12px">The student logs in with the email above and this temporary password.</p>' +
+      '<div class="form-group"><label for="f-password">Temporary Password <span class="required" aria-hidden="true">*</span></label>' +
+      '<div class="input-icon"><span data-icon="lock"></span>' +
+      '<input id="f-password" name="password" type="password" class="form-control has-toggle" autocomplete="new-password" placeholder="Enter a temporary password">' +
+      '<button type="button" class="input-toggle" id="pw-toggle"></button></div>' +
+      '<div class="field-actions"><button type="button" class="btn btn-secondary btn-sm" id="pw-generate">Generate password</button></div>' +
+      '<p class="field-hint">At least 8 characters with an uppercase letter, a lowercase letter and a number. Note it down: it cannot be shown again. The student can change it on their Profile page.</p>' +
+      '<p class="field-error" id="e-password" role="alert"></p></div>' +
+      '</div></div>'
+    );
   }
 
   /* ---------- Loading and rendering the table ---------- */
@@ -344,6 +390,7 @@
       field('admissionDate', 'Admission Date', inputHtml('admissionDate', 'date', isoDay(v.admissionDate)), { required: true }) +
       field('status', 'Status', selectHtml('status', ['Active', 'Inactive'], v.status || 'Active'), { required: true }) +
       '</div></div>' +
+      (edit || !isAdmin ? '' : accountBlock()) +
       '</form>'
     );
   }
@@ -401,6 +448,32 @@
     const alertBox = modal.root.querySelector('#form-alert');
     const saveBtn = modal.root.querySelector('#save-btn');
 
+    window.SAMS.hydrateIcons(modal.root);
+    const loginBox = form.querySelector('#f-createLogin');
+    const loginFields = form.querySelector('#login-fields');
+    const pwInput = form.elements.password;
+    const pwToggle = form.querySelector('#pw-toggle');
+
+    if (loginBox) {
+      const setVisible = (show) => {
+        pwInput.type = show ? 'text' : 'password';
+        pwToggle.innerHTML = window.icon(show ? 'eye-off' : 'eye', 20);
+        pwToggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      };
+      setVisible(false);
+      pwToggle.addEventListener('click', () => { setVisible(pwInput.type === 'password'); pwInput.focus(); });
+      form.querySelector('#pw-generate').addEventListener('click', () => {
+        pwInput.value = generatePassword();
+        setFieldError(form, 'password', '');
+        setVisible(true);
+        toast('Password generated. Note it down before saving.', 'info');
+      });
+      loginBox.addEventListener('change', () => {
+        loginFields.classList.toggle('hidden', !loginBox.checked);
+        setFieldError(form, 'password', '');
+      });
+    }
+
     form.addEventListener('input', (e) => {
       if (e.target.name) setFieldError(form, e.target.name, '');
     });
@@ -416,6 +489,19 @@
       if (firstBad) {
         form.elements[firstBad].focus();
         return;
+      }
+
+      const wantLogin = Boolean(loginBox && loginBox.checked);
+      if (wantLogin) {
+        const pw = pwInput.value;
+        let pwError = '';
+        if (!pw) pwError = 'Password is required.';
+        else {
+          const failed = PW_RULES.find((rule) => !rule.ok(pw));
+          if (failed) pwError = failed.message;
+        }
+        setFieldError(form, 'password', pwError);
+        if (pwError) { pwInput.focus(); return; }
       }
 
       const body = {
@@ -441,9 +527,26 @@
       modal.setLocked(true);
       try {
         await api(edit ? '/api/students/' + student._id : '/api/students', { method: edit ? 'PUT' : 'POST', body });
+
+        // Optionally create the student's login right after the record is saved
+        let accountError = '';
+        if (wantLogin) {
+          try {
+            const account = { fullName: v.fullName, email: v.email, password: pwInput.value, role: 'student', studentId: v.studentId };
+            if (v.phone) account.phone = v.phone;
+            await api('/api/auth/register', { method: 'POST', body: account });
+          } catch (accErr) {
+            accountError = accErr.message;
+          }
+        }
+
         modal.setLocked(false);
         modal.close();
-        toast(edit ? 'Student updated successfully.' : 'Student added successfully.', 'success');
+        if (accountError) {
+          toast('Student added, but the login account was not created: ' + accountError + ' Create it from Teachers, then Student accounts.', 'error', 10000);
+        } else {
+          toast(edit ? 'Student updated successfully.' : wantLogin ? 'Student added and login account created.' : 'Student added successfully.', 'success');
+        }
         await load(false);
         refreshOptions();
       } catch (err) {
